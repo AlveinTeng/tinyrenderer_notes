@@ -1,0 +1,26 @@
+# Ignore build directories
+build/
+CMakeFiles/
+cmake_install.cmake
+CMakeCache.txt
+Makefile
+
+# Ignore object files
+*.o
+*.obj
+
+# Ignore executables
+main
+program
+*.out
+
+# Ignore temporary files
+*.log
+*.tmp
+
+# Ignore other common generated files
+*.swp
+.DS_Store
+
+# Ignore the output
+*.tga
