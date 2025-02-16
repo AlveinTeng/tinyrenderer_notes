@@ -15,10 +15,10 @@ It's recommended to start with the provided source code to understand the full p
    cmake ..
    make
    ```
-3. **run the program:**
+3. **run the program:**  
    ```bash
    ./main
    ```
-4. **Expected Output:**
-   If everything is set up correctly, you should see an output file named **output.tga** with a red dot in the center.
+4. **Expected Output:**   
+   If everything is set up correctly, you should see an output file named *output.tga* with a red dot in the center.
    
