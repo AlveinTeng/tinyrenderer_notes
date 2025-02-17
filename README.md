@@ -21,4 +21,11 @@ It's recommended to start with the provided source code to understand the full p
    ```
 4. **Expected Output:**   
    If everything is set up correctly, you should see an output file named *output.tga* with a red dot in the center.
+
+## The overall structure of my notes
+In short, my notes for each lesson would simply answer three questions:
+   - Why we need this?
+   - What is this?
+   - How can we do this in detail
+
    
