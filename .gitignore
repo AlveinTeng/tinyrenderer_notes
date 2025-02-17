@@ -21,6 +21,7 @@ program
 # Ignore other common generated files
 *.swp
 .DS_Store
+.vscode/
 
 # Ignore the output
 *.tga
