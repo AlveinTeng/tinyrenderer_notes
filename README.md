@@ -26,8 +26,8 @@ It's recommended to start with the provided source code to understand the full p
 In short, my notes for each lesson would simply answer three questions:
    - Why we need this?
    - What is this?
-   - How can we do this in detail?
+   - How?(What did we do in the lesson)
 
 ## Lesson 01 Lines
-
+[Lesson 01 Note](./01line/Lesson1.md)
    
