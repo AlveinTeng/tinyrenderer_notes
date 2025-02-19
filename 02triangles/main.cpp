@@ -183,6 +183,7 @@ void saveAndShow(TGAImage& image, const char* outputPath){
 }
 
 int main(int argc, char** argv) {
+    Vec3f light_dir(0,0,-1);
 	if (2==argc) {
         model = new Model(argv[1]);
     } else {
@@ -194,28 +195,35 @@ int main(int argc, char** argv) {
 	}
 	const char* outputPath = "../output.tga";
 
-    // TGAImage image(width, height, TGAImage::RGB);
-    // for (int i=0; i<model->nfaces(); i++) {
-    //     std::vector<int> face = model->face(i);
-    //     for (int j=0; j<3; j++) {
-    //         Vec3f v0 = model->vert(face[j]);
-    //         Vec3f v1 = model->vert(face[(j+1)%3]);
-    //         int x0 = (v0.x+1.)*width/2.;
-    //         int y0 = (v0.y+1.)*height/2.;
-    //         int x1 = (v1.x+1.)*width/2.;
-    //         int y1 = (v1.y+1.)*height/2.;
-    //         line5(x0, y0, x1, y1, image, red);
-    //     }
-    // }
+    TGAImage image(width, height, TGAImage::RGB);
+    for (int i=0; i<model->nfaces(); i++) { 
+    std::vector<int> face = model->face(i); 
+    Vec2i screen_coords[3]; 
+    Vec3f world_coords[3]; 
+    for (int j=0; j<3; j++) { 
+        Vec3f v = model->vert(face[j]); 
+        screen_coords[j] = Vec2i((v.x+1.)*width/2., (v.y+1.)*height/2.); 
+        world_coords[j]  = v; 
+    } 
+    Vec3f n = (world_coords[2]-world_coords[0])^(world_coords[1]-world_coords[0]); 
+    n.normalize(); 
+    float intensity = n*light_dir; 
+    if (intensity>0) { 
+        triangle(screen_coords, image, TGAColor(intensity*255, intensity*255, intensity*255, 255)); 
+    } 
+}
+    image.flip_vertically();
 
-    TGAImage frame(200, 200, TGAImage::RGB); 
-    Vec2i pts[3] = {Vec2i(10,10), Vec2i(100, 30), Vec2i(190, 160)}; 
-    triangle(pts, frame, TGAColor(255, 0,   0,   255)); 
-    frame.flip_vertically(); // to place the origin in the bottom left corner of the image 
+    saveAndShow(image, outputPath);
 
-    // frame.flip_vertically(); // i want to have the origin at the left bottom corner of the image
-    // image.write_tga_file("output.tga");
-	saveAndShow(frame, outputPath);
+    // TGAImage frame(200, 200, TGAImage::RGB); 
+    // Vec2i pts[3] = {Vec2i(10,10), Vec2i(100, 30), Vec2i(190, 160)}; 
+    // triangle(pts, frame, TGAColor(255, 0,   0,   255)); 
+    // frame.flip_vertically(); // to place the origin in the bottom left corner of the image 
+
+    // // frame.flip_vertically(); // i want to have the origin at the left bottom corner of the image
+    // // image.write_tga_file("output.tga");
+	// saveAndShow(frame, outputPath);
     delete model;
     return 0;
 	
