@@ -30,4 +30,5 @@ In short, my notes for each lesson would simply answer three questions:
 
 ## Lesson 01 Lines
 [Lesson 01 Note](./01line/Lesson1.md)
+[Lesson 03 Note](./03zbuffer/Lesson3.md)
    
