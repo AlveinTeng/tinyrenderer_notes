@@ -37,16 +37,14 @@ void line(int x0, int y0, int x1, int y1, TGAImage &image, TGAColor color) {
 }
 
 Vec3f barycentric(Vec3f A, Vec3f B, Vec3f C, Vec3f P) {
-    Vec3f s[2];
-    for (int i=2; i--; ) {
-        s[i][0] = C[i]-A[i];
-        s[i][1] = B[i]-A[i];
-        s[i][2] = A[i]-P[i];
-    }
-    Vec3f u = cross(s[0], s[1]);
-    if (std::abs(u[2])>1e-2) // dont forget that u[2] is integer. If it is zero then triangle ABC is degenerate
-        return Vec3f(1.f-(u.x+u.y)/u.z, u.y/u.z, u.x/u.z);
-    return Vec3f(-1,1,1); // in this case generate negative coordinates, it will be thrown away by the rasterizator
+    Vec3f v0 = B - A, v1 = C - A, v2 = P - A;
+    float d00 = v0.x * v1.y - v0.y * v1.x;
+    float d01 = (v2.x * v1.y - v2.y * v1.x) / d00;
+    float d02 = (v0.x * v2.y - v0.y * v2.x) / d00;
+    float u = 1.0f - d01 - d02;
+    float v = d01;
+    float w = d02;
+    return Vec3f(u, v, w);
 }
 
 void triangleWithTex(Vec3f *pts, Vec2f* tex, float *zbuffer, TGAImage & image, TGAImage &texture) {
@@ -75,9 +73,14 @@ void triangleWithTex(Vec3f *pts, Vec2f* tex, float *zbuffer, TGAImage & image, T
             
             if (zbuffer[int(P.x+P.y*width)]<P.z) {
                 zbuffer[int(P.x+P.y*width)] = P.z;
+                // PointTex.u = std::min(1.f, std::max(0.f, PointTex.u));
+                // PointTex.v = std::min(1.f, std::max(0.f, PointTex.v));
                 PointTex.u = std::min(1.f, std::max(0.f, PointTex.u));
                 PointTex.v = std::min(1.f, std::max(0.f, PointTex.v));
-                TGAColor color = texture.get(PointTex.u * texture.get_width(),PointTex.v * texture.get_height());
+                int texX = static_cast<int>(PointTex.u * (texture.get_width() - 1));
+                int texY = static_cast<int>((PointTex.v) * (texture.get_height() - 1)); // 反转V分量
+                TGAColor color = texture.get(texX, texY);
+                // TGAColor color = texture.get(PointTex.u * texture.get_width(),PointTex.v * texture.get_height());
 
                 image.set(P.x, P.y, color);
             }
@@ -90,16 +93,22 @@ void triangle(Vec3f *pts, float *zbuffer, TGAImage &image, TGAColor color) {
     Vec2f bboxmin( std::numeric_limits<float>::max(),  std::numeric_limits<float>::max());
     Vec2f bboxmax(-std::numeric_limits<float>::max(), -std::numeric_limits<float>::max());
     Vec2f clamp(image.get_width()-1, image.get_height()-1);
+
+    int minX = std::max(0, static_cast<int>(std::floor(bboxmin.x)));
+    int maxX = std::min(image.get_width()-1, static_cast<int>(std::ceil(bboxmax.x)));
+    int minY = std::max(0, static_cast<int>(std::floor(bboxmin.y)));
+    int maxY = std::min(image.get_height()-1, static_cast<int>(std::ceil(bboxmax.y)));
     for (int i=0; i<3; i++) {
         for (int j=0; j<2; j++) {
             bboxmin[j] = std::max(0.f,      std::min(bboxmin[j], pts[i][j]));
             bboxmax[j] = std::min(clamp[j], std::max(bboxmax[j], pts[i][j]));
         }
     }
-    Vec3f P;
+    // Vec3f P;
     Vec2f texture;
-    for (P.x=bboxmin.x; P.x<=bboxmax.x; P.x++) {
-        for (P.y=bboxmin.y; P.y<=bboxmax.y; P.y++) {
+    for (int x = minX; x <= maxX; x++) {
+        for (int y = minY; y <= maxY; y++) {
+            Vec3f P(x,y,0);
             Vec3f bc_screen  = barycentric(pts[0], pts[1], pts[2], P);
             if (bc_screen.x<0 || bc_screen.y<0 || bc_screen.z<0) continue;
             P.z = 0;
@@ -145,9 +154,9 @@ int main(int argc, char** argv) {
         std::vector<int> textIndices = model->texIndices(i);
         Vec3f pts[3];
         Vec2f tex[3];
-        for (int i=0; i<3; i++){
-            pts[i] = world2screen(model->vert(face[i]));
-            tex[i] = model->texture(i);
+        for (int j=0; j<3; j++){
+            pts[j] = world2screen(model->vert(face[j]));
+            tex[j] = model->texture(textIndices[j]);
         } 
 
         // triangle(pts, zbuffer, image, TGAColor(rand()%255, rand()%255, rand()%255, 255));
