@@ -44,15 +44,15 @@ template <class t> struct Vec3 {
 	template <class > friend std::ostream& operator<<(std::ostream& s, Vec3<t>& v);
 
 	// Vec3<t> operator ^(const Vec3<t>& v) const { return Vec3<t>(y*v.z-z*v.y, z*v.x-x*v.z, x*v.y-y*v.x); }
-    friend Vec3<t> cross(Vec3<t> v1, Vec3<t> v2) { return v1^v2; }
+    // friend Vec3<t> cross(Vec3<t> v1, Vec3<t> v2) { return v1^v2; }
 
-	// inline Vec3<t> cross(const Vec3<t>& V) const {
-    //     return Vec3<t>(
-    //         y * V.z - z * V.y, // x component
-    //         z * V.x - x * V.z, // y component
-    //         x * V.y - y * V.x  // z component
-    //     );
-    // }
+	inline Vec3<t> cross(const Vec3<t>& V) const {
+        return Vec3<t>(
+            y * V.z - z * V.y, // x component
+            z * V.x - x * V.z, // y component
+            x * V.y - y * V.x  // z component
+        );
+    }
 };
 
 typedef Vec2<float> Vec2f;
@@ -102,7 +102,11 @@ class Matrix {
         Matrix inverse() const;
 		static Matrix identity(int dimensions);
         void display() const;
+        Matrix rotation_x(float cos, float sin);
+        Matrix rotation_y(float cos, float sin);
+        Matrix rotation_z(float cos, float sin);
+        Matrix zoom(float factor);
+        Matrix translation(Vec3f v);
 };
-	
 
 #endif //__GEOMETRY_H__

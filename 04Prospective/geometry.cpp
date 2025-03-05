@@ -120,3 +120,44 @@ void Matrix::display() const {
         std::cout << std::endl;
     }
 }
+
+
+Matrix Matrix::rotation_x(float cos, float sin) {
+    Matrix rotation = Matrix::identity(4);
+    rotation[1][1] = rotation[2][2] = cos;
+    rotation[1][2] = -sin;
+    rotation[2][1] = sin;
+    return rotation;
+}
+
+Matrix Matrix::rotation_y(float cos, float sin) {
+    Matrix rotation = Matrix::identity(4);
+    rotation[0][0] = rotation[2][2] = cos;
+    rotation[0][2] = sin;
+    rotation[2][0] = -sin;
+    return rotation;
+}
+
+Matrix Matrix::rotation_z(float cos, float sin) {
+    Matrix rotation = Matrix::identity(4);
+    rotation[0][0] = rotation[1][1] = cos;
+    rotation[0][1] = -sin;
+    rotation[1][0] = sin;
+
+    return rotation;
+}
+
+Matrix Matrix::zoom(float factor) {
+    Matrix zoom = Matrix::identity(4);
+    zoom[0][0] = zoom[1][1] = zoom[2][2] = factor;
+    return zoom;
+}
+
+Matrix Matrix::translation(Vec3f v) {
+    Matrix translation = Matrix::identity(4);
+    translation[0][3] = v.x;
+    translation[1][3] = v.y;
+    translation[2][3] = v.z;
+
+    return translation;
+}

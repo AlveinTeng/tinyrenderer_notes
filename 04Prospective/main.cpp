@@ -7,234 +7,147 @@
 #include "model.h"
 #include "geometry.h"
 
-const TGAColor white  = TGAColor(255, 255, 255, 255);
-const TGAColor red    = TGAColor(255, 0,   0,   255);
-const TGAColor green  = TGAColor(0,   255, 0,   255);
-const TGAColor blue   = TGAColor(0,   0,   255, 255);
-const TGAColor yellow = TGAColor(255, 255, 0,   255);
+const TGAColor white = TGAColor(255, 255, 255, 255);
+const TGAColor red = TGAColor(255, 0, 0, 255);
+const TGAColor green = TGAColor(0, 255, 0, 255);
+const TGAColor blue = TGAColor(0, 0, 255, 255);
+const TGAColor yellow = TGAColor(255, 255, 0, 255);
+
 Model *model = NULL;
-const int width  = 800;
+const int width = 800;
 const int height = 800;
+const int depth = 255;
 
-void line(int x0, int y0, int x1, int y1, TGAImage &image, TGAColor color) {
-    bool steep = false;
-    if (std::abs(x0-x1)<std::abs(y0-y1)) {
-        std::swap(x0, y0);
-        std::swap(x1, y1);
-        steep = true;
-    }
-    if (x0>x1) {
-        std::swap(x0, x1);
-        std::swap(y0, y1);
-    }
-
-    for (int x=x0; x<=x1; x++) {
-        float t = (x-x0)/(float)(x1-x0);
-        int y = y0*(1.-t) + y1*t;
-        if (steep) {
-            image.set(y, x, color);
-        } else {
-            image.set(x, y, color);
-        }
-    }
-}
-
-void line(Vec3f p0, Vec3f p1, TGAImage &image, TGAColor color) {
-    bool steep = false;
-    if (std::abs(p0.x-p1.x)<std::abs(p0.y-p1.y)) {
-        std::swap(p0.x, p0.y);
-        std::swap(p1.x, p1.y);
-        steep = true;
-    }
-    if (p0.x>p1.x) {
-        std::swap(p0, p1);
-    }
-
-    for (int x=p0.x; x<=p1.x; x++) {
-        float t = (x-p0.x)/(float)(p1.x-p0.x);
-        int y = p0.y*(1.-t) + p1.y*t+.5;
-        if (steep) {
-            image.set(y, x, color);
-        } else {
-            image.set(x, y, color);
-        }
-    }
-}
-
-Vec3f barycentric(Vec3f A, Vec3f B, Vec3f C, Vec3f P) {
-    Vec3f v0 = B - A, v1 = C - A, v2 = P - A;
-    float d00 = v0.x * v1.y - v0.y * v1.x;
-    float d01 = (v2.x * v1.y - v2.y * v1.x) / d00;
-    float d02 = (v0.x * v2.y - v0.y * v2.x) / d00;
-    float u = 1.0f - d01 - d02;
-    float v = d01;
-    float w = d02;
-    return Vec3f(u, v, w);
-}
-
-void triangleWithTex(Vec3f *pts, Vec2f* tex, float *zbuffer, TGAImage & image, TGAImage &texture) {
-    Vec2f bboxmin( std::numeric_limits<float>::max(),  std::numeric_limits<float>::max());
-    Vec2f bboxmax(-std::numeric_limits<float>::max(), -std::numeric_limits<float>::max());
-    Vec2f clamp(image.get_width()-1, image.get_height()-1);
-    for (int i=0; i<3; i++) {
-        for (int j=0; j<2; j++) {
-            bboxmin[j] = std::max(0.f,      std::min(bboxmin[j], pts[i][j]));
-            bboxmax[j] = std::min(clamp[j], std::max(bboxmax[j], pts[i][j]));
-        }
-    }
-    Vec3f P;
-    Vec2f PointTex;
-    for (P.x=bboxmin.x; P.x<=bboxmax.x; P.x++) {
-        for (P.y=bboxmin.y; P.y<=bboxmax.y; P.y++) {
-            Vec3f bc_screen  = barycentric(pts[0], pts[1], pts[2], P);
-            if (bc_screen.x<0 || bc_screen.y<0 || bc_screen.z<0) continue;
-            P.z = 0;
-            PointTex = Vec2f(0, 0);
-            for (int i=0; i<3; i++){
-                P.z += pts[i][2]*bc_screen[i];
-                PointTex.u += tex[i].u * bc_screen[i];
-                PointTex.v += tex[i].v * bc_screen[i];
-            } 
-            
-            if (zbuffer[int(P.x+P.y*width)]<P.z) {
-                zbuffer[int(P.x+P.y*width)] = P.z;
-                // PointTex.u = std::min(1.f, std::max(0.f, PointTex.u));
-                // PointTex.v = std::min(1.f, std::max(0.f, PointTex.v));
-                PointTex.u = std::min(1.f, std::max(0.f, PointTex.u));
-                PointTex.v = std::min(1.f, std::max(0.f, PointTex.v));
-                int texX = static_cast<int>(PointTex.u * (texture.get_width() - 1));
-                int texY = static_cast<int>((PointTex.v) * (texture.get_height() - 1)); // 反转V分量
-                TGAColor color = texture.get(texX, texY);
-                // TGAColor color = texture.get(PointTex.u * texture.get_width(),PointTex.v * texture.get_height());
-
-                image.set(P.x, P.y, color);
-            }
-        }
-    }
-
-}
-
-void triangle(Vec3f *pts, float *zbuffer, TGAImage &image, TGAColor color) {
-    Vec2f bboxmin( std::numeric_limits<float>::max(),  std::numeric_limits<float>::max());
-    Vec2f bboxmax(-std::numeric_limits<float>::max(), -std::numeric_limits<float>::max());
-    Vec2f clamp(image.get_width()-1, image.get_height()-1);
-
-    int minX = std::max(0, static_cast<int>(std::floor(bboxmin.x)));
-    int maxX = std::min(image.get_width()-1, static_cast<int>(std::ceil(bboxmax.x)));
-    int minY = std::max(0, static_cast<int>(std::floor(bboxmin.y)));
-    int maxY = std::min(image.get_height()-1, static_cast<int>(std::ceil(bboxmax.y)));
-    for (int i=0; i<3; i++) {
-        for (int j=0; j<2; j++) {
-            bboxmin[j] = std::max(0.f,      std::min(bboxmin[j], pts[i][j]));
-            bboxmax[j] = std::min(clamp[j], std::max(bboxmax[j], pts[i][j]));
-        }
-    }
-    // Vec3f P;
-    Vec2f texture;
-    for (int x = minX; x <= maxX; x++) {
-        for (int y = minY; y <= maxY; y++) {
-            Vec3f P(x,y,0);
-            Vec3f bc_screen  = barycentric(pts[0], pts[1], pts[2], P);
-            if (bc_screen.x<0 || bc_screen.y<0 || bc_screen.z<0) continue;
-            P.z = 0;
-            for (int i=0; i<3; i++) P.z += pts[i][2]*bc_screen[i];
-            if (zbuffer[int(P.x+P.y*width)]<P.z) {
-                zbuffer[int(P.x+P.y*width)] = P.z;
-                image.set(P.x, P.y, color);
-            }
-        }
-    }
-}
-Vec3f m2v(Matrix m) {
-    return Vec3f(m[0][0]/ m[3][0], m[1][0] / m[3][0], m[2][0]/ m[3][0]);
-}
+Vec3f camera(0, 0, 10);
 
 Matrix v2m(Vec3f v) {
-    Matrix m(4,1);
+    Matrix m(4, 1);
     m[0][0] = v.x;
     m[1][0] = v.y;
     m[2][0] = v.z;
     m[3][0] = 1.f;
-
     return m;
 }
 
-Matrix viewport(int x, int y, int w, int h) {
-    Matrix m = Matrix::identity(4);
-    m[0][3] = x+w/2.f;
-    m[1][3] = y+h/2.f;
-    m[2][3] = 1/2.f;
-
-    m[0][0] = w/2.f;
-    m[1][1] = h/2.f;
-    m[2][2] = 1/2.f;
-    return m;
+Vec3f barycentric2D(const Vec2f &A, const Vec2f &B, const Vec2f &C, const Vec2f &P) {
+    float denom = (B.y - C.y) * (A.x - C.x) + (C.x - B.x) * (A.y - C.y);
+    if (std::fabs(denom) < 1e-6) return Vec3f(-1, 1, 1);
+    float alpha = ((B.y - C.y) * (P.x - C.x) + (C.x - B.x) * (P.y - C.y)) / denom;
+    float beta = ((C.y - A.y) * (P.x - C.x) + (A.x - C.x) * (P.y - C.y)) / denom;
+    float gamma = 1.f - alpha - beta;
+    return Vec3f(alpha, beta, gamma);
 }
 
-
-Vec3f world2screen(Vec3f v) {
-    return Vec3f(int((v.x+1.)*width/2.+.5), int((v.y+1.)*height/2.+.5), v.z);
+Matrix projection(float near, float far, float fov) {
+    float aspect = (float)width / height;
+    float tanHalfFov = tan(fov * 0.5f * M_PI / 180.f);
+    Matrix proj = Matrix::identity(4);
+    proj[0][0] = 1.f / (aspect * tanHalfFov);
+    proj[1][1] = 1.f / tanHalfFov;
+    proj[2][2] = -(far + near) / (far - near);
+    proj[2][3] = -2.f * far * near / (far - near);
+    proj[3][2] = -1.f;
+    proj[3][3] = 0.f;
+    return proj;
 }
 
-void displayTexure(Model* model) {
-    float *zbuffer = new float[width*height];
-    for (int i=width*height; i--; zbuffer[i] = -std::numeric_limits<float>::max());
+struct VertexData {
+    Vec2f screenXY; // 视口变换后的x,y
+    float ndcZ;     // NDC的z值（clip.z/clip.w）
+    float oneOverW; // 1/clip.w
+    Vec2f uvOverW;  // uv/clip.w
+};
 
-    TGAImage textureImage;
-    if(!textureImage.read_tga_file("../obj/african_head_diffuse.tga")) {
-        throw std::runtime_error("Failed to load texture!");
+void triangleWithTexPerspectiveCorrect(const VertexData v[3], float *zbuffer, TGAImage &image, const TGAImage &texture) {
+    Vec2f bboxmin(1e8, 1e8), bboxmax(-1e8, -1e8);
+    Vec2f clamp(image.get_width() - 1, image.get_height() - 1);
+    for (int i = 0; i < 3; i++) {
+        bboxmin.x = std::max(0.f, std::min(bboxmin.x, v[i].screenXY.x));
+        bboxmin.y = std::max(0.f, std::min(bboxmin.y, v[i].screenXY.y));
+        bboxmax.x = std::min(clamp.x, std::max(bboxmax.x, v[i].screenXY.x));
+        bboxmax.y = std::min(clamp.y, std::max(bboxmax.y, v[i].screenXY.y));
     }
 
+    Vec2i P;
+    for (P.x = bboxmin.x; P.x <= bboxmax.x; P.x++) {
+        for (P.y = bboxmin.y; P.y <= bboxmax.y; P.y++) {
+            Vec3f bc = barycentric2D(v[0].screenXY, v[1].screenXY, v[2].screenXY, Vec2f(P.x, P.y));
+            if (bc.x < 0 || bc.y < 0 || bc.z < 0) continue;
 
-    TGAImage image(width, height, TGAImage::RGB);
-    for (int i=0; i<model->nfaces(); i++) {
-        std::vector<int> face = model->face(i);
-        std::vector<int> textIndices = model->texIndices(i);
-        Vec3f pts[3];
-        Vec2f tex[3];
-        for (int j=0; j<3; j++){
-            pts[j] = world2screen(model->vert(face[j]));
-            tex[j] = model->texture(textIndices[j]);
-        } 
+            // 插值参数
+            float oneOverW = v[0].oneOverW * bc.x + v[1].oneOverW * bc.y + v[2].oneOverW * bc.z;
+            if (oneOverW < 1e-8) continue;
+            float w = 1.f / oneOverW;
 
-        // triangle(pts, zbuffer, image, TGAColor(rand()%255, rand()%255, rand()%255, 255));
-        triangleWithTex(pts, tex, zbuffer, image, textureImage);
-    }
+            // 计算屏幕空间z：将NDC的z [-1,1]映射到[0, depth]
+            float z_ndc = (v[0].ndcZ * bc.x + v[1].ndcZ * bc.y + v[2].ndcZ * bc.z);
+            float z_screen = (z_ndc + 1.f) * 0.5f * depth;
 
-    image.flip_vertically(); // i want to have the origin at the left bottom corner of the image
-    image.write_tga_file("../output.tga");
-}
+            // 深度测试
+            int idx = P.x + P.y * width;
+            if (z_screen < zbuffer[idx]) {
+                zbuffer[idx] = z_screen;
 
+                // 计算uv
+                Vec2f uv = (v[0].uvOverW * bc.x + v[1].uvOverW * bc.y + v[2].uvOverW * bc.z) * w;
+                uv.x = std::max(0.f, std::min(1.f, uv.x));
+                uv.y = std::max(0.f, std::min(1.f, uv.y));
 
-int main(int argc, char** argv) {
-    if (2==argc) {
-        model = new Model(argv[1]);
-    } else {
-        std::cout << "african_head" << std::endl;
-        model = new Model("../obj/cube.obj");
-        if (model == nullptr){
-            throw std::runtime_error("Failed to get model");
+                int texX = uv.x * (texture.get_width() - 1);
+                int texY = uv.y * (texture.get_height() - 1); // 这里纹理不反向
+                image.set(P.x, P.y, texture.get(texX, texY));
+            }
         }
     }
+}
 
-    TGAImage image(width, height, TGAImage::RGB);
-    Matrix VP = viewport(width/4, width/4, width/2, height/2);
+void renderModelPerspective(Model *model, TGAImage &image, const TGAImage &texture) {
+    float *zbuffer = new float[width * height];
+    std::fill_n(zbuffer, width * height, std::numeric_limits<float>::max());
 
-    { // draw the axes
-        Vec3f x(1.f, 0.f, 0.f), y(0.f, 1.f, 0.f), o(0.f, 0.f, 0.f);
-        o = m2v(VP*v2m(o));
-        x = m2v(VP*v2m(x));
-        y = m2v(VP*v2m(y));
-        line(o, x, image, red);
-        line(o, y, image, green);
+    Matrix ModelView = Matrix::identity(4);
+    ModelView[2][3] = -2.f; // 调整模型位置
+    Matrix proj = projection(5.f, 100.f, 90.f);
+
+    for (int i = 0; i < model->nfaces(); i++) {
+        std::vector<int> face = model->face(i);
+        std::vector<int> texIndices = model->texIndices(i);
+        VertexData vdata[3];
+
+        for (int j = 0; j < 3; j++) {
+            Vec3f worldPos = model->vert(face[j]);
+            Vec2f uv = model->texture(texIndices[j]);
+
+            Matrix clipCoord = proj * ModelView * v2m(worldPos);
+            float w_clip = clipCoord[3][0];
+            Vec3f ndc = Vec3f(clipCoord[0][0]/w_clip, clipCoord[1][0]/w_clip, clipCoord[2][0]/w_clip);
+
+            // 视口变换后的x,y
+            Vec2f screenXY = Vec2f((ndc.x + 1) * 0.5f * width, (ndc.y + 1) * 0.5f * height);
+            
+            vdata[j].screenXY = screenXY;
+            vdata[j].ndcZ = ndc.z;
+            vdata[j].oneOverW = 1.f / w_clip;
+            vdata[j].uvOverW = uv * vdata[j].oneOverW;
+        }
+
+        triangleWithTexPerspectiveCorrect(vdata, zbuffer, image, texture);
     }
 
-    image.flip_vertically(); // i want to have the origin at the left bottom corner of the image
+    image.flip_vertically();
     image.write_tga_file("../output.tga");
+    delete[] zbuffer;
+}
 
-    // std::cout << "The Model has " << model->nfaces() << " faces" << std::endl;
+int main(int argc, char** argv) {
+    model = (argc > 1) ? new Model(argv[1]) : new Model("../obj/african_head.obj");
+    TGAImage texture;
+    if (!texture.read_tga_file("../obj/african_head_diffuse.tga")) {
+        std::cerr << "Failed to load texture!" << std::endl;
+        return 1;
+    }
 
-    
-    delete model;
+    TGAImage image(width, height, TGAImage::RGB);
+    renderModelPerspective(model, image, texture);
     return 0;
 }
