@@ -9,18 +9,22 @@ public:
     Rasterizer(int width, int height);
 
     // Transformation matrices
-    void viewport(int x, int y, int w, int h);
+    Matrix viewport(int x, int y, int w, int h);
     void projection(float coeff = 0.f); // coeff = -1/c
     void lookat(Vec3f eye, Vec3f center, Vec3f up);
 
     // Triangle rendering
     void triangle(Vec4f *pts, IShader &shader, TGAImage &image, TGAImage &zbuffer);
+    void renderModelPerspective(Model *model, TGAImage &image, const TGAImage &texture);
 
 private:
-    int width, height;
+    int width, height, depth;
     Matrix ModelView;
     Matrix Viewport;
     Matrix Projection;
+
+    Vec3f camera;
+    Vec3f center;
 };
 
 struct IShader {
