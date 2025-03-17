@@ -25,3 +25,6 @@ program
 
 # Ignore the output
 *.tga
+*.jpg
+
+*/obj/

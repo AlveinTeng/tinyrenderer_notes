@@ -19,7 +19,7 @@ const int height = 800;
 const int depth = 255;
 Matrix ModelView;
 
-Vec3f camera(0, 0, 10);
+Vec3f camera(0, 0, 1);
 Vec3f center(0,0,0);
 
 Matrix v2m(Vec3f v) {
@@ -144,7 +144,7 @@ void renderModelPerspective(Model *model, TGAImage &image, const TGAImage &textu
     // Matrix ModelView = Matrix::identity(4);
     lookat(camera, center, Vec3f(0,-1,0));
     Matrix viewportMat = viewport(0, 0, width, height);
-    ModelView[2][3] = -2.f; // 调整模型位置
+    ModelView[2][3] += -2.f; // 调整模型位置
     Matrix proj = projection(5.f, 100.f, 90.f);
 
     for (int i = 0; i < model->nfaces(); i++) {
@@ -155,6 +155,7 @@ void renderModelPerspective(Model *model, TGAImage &image, const TGAImage &textu
         for (int j = 0; j < 3; j++) {
             Vec3f worldPos = model->vert(face[j]);
             Vec2f uv = model->texture(texIndices[j]);
+            uv.y = 1 - uv.y;
 
             Matrix clipCoord = proj * ModelView * v2m(worldPos);
             float w_clip = clipCoord[3][0];
@@ -174,15 +175,15 @@ void renderModelPerspective(Model *model, TGAImage &image, const TGAImage &textu
         triangleWithTexPerspectiveCorrect(vdata, zbuffer, image, texture);
     }
 
-    image.flip_vertically();
+    // image.flip_vertically();
     image.write_tga_file("../output.tga");
     delete[] zbuffer;
 }
 
 int main(int argc, char** argv) {
-    model = (argc > 1) ? new Model(argv[1]) : new Model("../obj/african_head.obj");
+    model = (argc > 1) ? new Model(argv[1]) : new Model("../obj/african_head/african_head.obj");
     TGAImage texture;
-    if (!texture.read_tga_file("../obj/african_head_diffuse.tga")) {
+    if (!texture.read_tga_file("../obj/african_head/african_head_diffuse.tga")) {
         std::cerr << "Failed to load texture!" << std::endl;
         return 1;
     }

@@ -94,7 +94,7 @@ void triangleWithTexPerspectiveCorrect(const VertexData v[3], float *zbuffer, TG
                 uv.y = std::max(0.f, std::min(1.f, uv.y));
 
                 int texX = uv.x * (texture.get_width() - 1);
-                int texY = uv.y * (texture.get_height() - 1); // 这里纹理不反向
+                int texY = (1-uv.y) * (texture.get_height() - 1); // 这里纹理不反向
                 image.set(P.x, P.y, texture.get(texX, texY));
             }
         }
@@ -140,9 +140,9 @@ void renderModelPerspective(Model *model, TGAImage &image, const TGAImage &textu
 }
 
 int main(int argc, char** argv) {
-    model = (argc > 1) ? new Model(argv[1]) : new Model("../obj/african_head.obj");
+    model = (argc > 1) ? new Model(argv[1]) : new Model("../obj/african_head/african_head.obj");
     TGAImage texture;
-    if (!texture.read_tga_file("../obj/african_head_diffuse.tga")) {
+    if (!texture.read_tga_file("../obj/african_head/african_head_diffuse.tga")) {
         std::cerr << "Failed to load texture!" << std::endl;
         return 1;
     }
