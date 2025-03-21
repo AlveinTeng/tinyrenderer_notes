@@ -14,6 +14,8 @@ private:
     T data_[DIM];
 };
 
+
+
 template <class t> struct Vec2 {
 	union {
 		struct {t u, v;};

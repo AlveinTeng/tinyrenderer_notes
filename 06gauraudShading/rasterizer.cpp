@@ -119,7 +119,7 @@ void Rasterizer::triangleWithTexPerspectiveCorrect(const Rasterizer::VertexData 
     }
 }
 
-void Rasterizer::renderModelPerspective(Model *model, TGAImage &image, const TGAImage &texture , int depth, int weight, int height) {
+void Rasterizer::renderModelPerspective(Model *model, TGAImage &image, const TGAImage &texture , int depth, int width, int height) {
     float *zbuffer = new float[width * height];
     std::fill_n(zbuffer, width * height, std::numeric_limits<float>::max());
 
@@ -127,7 +127,7 @@ void Rasterizer::renderModelPerspective(Model *model, TGAImage &image, const TGA
     lookat(camera, center, Vec3f(0,-1,0), ModelView);
     Matrix viewportMat = viewport(0, 0, width, height, depth);
     ModelView[2][3] = -2.f; // 调整模型位置
-    Matrix proj = projection(5.f, 100.f, 90.f, weight, height);
+    Matrix proj = projection(5.f, 100.f, 90.f, width, height);
 
     for (int i = 0; i < model->nfaces(); i++) {
         std::vector<int> face = model->face(i);
