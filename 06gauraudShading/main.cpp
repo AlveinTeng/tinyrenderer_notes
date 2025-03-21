@@ -19,8 +19,18 @@ const int width = 800;
 const int height = 800;
 const int depth = 255;
 
+Matrix ModelView;
+
 Vec3f camera(0, 0, 10);
 Vec3f center(0,0,0);
+
+struct GouraudShader : public IShader {
+    Vec3f varing_intensity;
+
+    virtual Vec4f vertex(int iface, int nthvert) {
+    }
+    
+};
 
 int main(int argc, char** argv) {
     model = (argc > 1) ? new Model(argv[1]) : new Model("../obj/african_head/african_head.obj");
@@ -32,6 +42,6 @@ int main(int argc, char** argv) {
 
     TGAImage image(width, height, TGAImage::RGB);
     Rasterizer rasterizer = Rasterizer(width, height, camera, center, depth, model);
-    rasterizer.renderModelPerspective(model, image, texture);
+    rasterizer.renderModelPerspective(model, image, texture, depth, width, height);
     return 0;
 }

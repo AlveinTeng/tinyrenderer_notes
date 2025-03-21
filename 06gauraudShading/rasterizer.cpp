@@ -11,7 +11,7 @@ Rasterizer::Rasterizer(int width, int height, Vec3f camera, Vec3f center, int de
     this->model = model; 
 }
 
-Matrix Rasterizer::viewport(int x, int y, int w, int h) {
+Matrix Rasterizer::viewport(int x, int y, int w, int h, int depth) {
     Matrix m = Matrix::identity(4);
     m[0][0] = w / 2.f;
     m[0][3] = x + w / 2.f;
@@ -25,7 +25,7 @@ Matrix Rasterizer::viewport(int x, int y, int w, int h) {
     return m;
 }
 
-void Rasterizer::lookat(Vec3f eye, Vec3f center, Vec3f up) {
+void Rasterizer::lookat(Vec3f eye, Vec3f center, Vec3f up, Matrix& ModelView) {
     Vec3f z = (eye-center).normalize();
     Vec3f x =up.cross(z).normalize();
     Vec3f y = z.cross(x).normalize();
@@ -38,8 +38,9 @@ void Rasterizer::lookat(Vec3f eye, Vec3f center, Vec3f up) {
         Tr[i][3] = -eye[i];
     }
     ModelView = Minv*Tr;
+    
 }
-Matrix Rasterizer::projection(float near, float far, float fov) {
+Matrix Rasterizer::projection(float near, float far, float fov, int width, int height) {
     float aspect = (float)width / height;
     float tanHalfFov = tan(fov * 0.5f * M_PI / 180.f);
     Matrix proj = Matrix::identity(4);
@@ -118,15 +119,15 @@ void Rasterizer::triangleWithTexPerspectiveCorrect(const Rasterizer::VertexData 
     }
 }
 
-void Rasterizer::renderModelPerspective(Model *model, TGAImage &image, const TGAImage &texture) {
+void Rasterizer::renderModelPerspective(Model *model, TGAImage &image, const TGAImage &texture , int depth, int weight, int height) {
     float *zbuffer = new float[width * height];
     std::fill_n(zbuffer, width * height, std::numeric_limits<float>::max());
 
     // Matrix ModelView = Matrix::identity(4);
-    lookat(camera, center, Vec3f(0,-1,0));
-    Matrix viewportMat = viewport(0, 0, width, height);
+    lookat(camera, center, Vec3f(0,-1,0), ModelView);
+    Matrix viewportMat = viewport(0, 0, width, height, depth);
     ModelView[2][3] = -2.f; // 调整模型位置
-    Matrix proj = projection(5.f, 100.f, 90.f);
+    Matrix proj = projection(5.f, 100.f, 90.f, weight, height);
 
     for (int i = 0; i < model->nfaces(); i++) {
         std::vector<int> face = model->face(i);

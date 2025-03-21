@@ -71,8 +71,48 @@ std::vector<int> Model::texIndices(int idx) {
 Vec3f Model::vert(int i) {
     return verts_[i];
 }
+Vec3f Model::vert(int iface, int nthvert) {
+    return verts_[faces_[iface][nthvert]];
+}
 
 Vec2f Model::texture(int i) {
     return tex_coords_[i];
 }
+
+void Model::load_texture(std::string filename, const char* suffix, TGAImage& image) {
+    std::string texfile(filename);
+    size_t dot = texfile.find_first_of(".");
+    if (dot != std::string::npos) {
+        texfile = texfile.substr(0, dot) + std::string(suffix);
+        std::cerr << "texture file " << texfile << " loading " << (image.read_tga_file(texfile.c_str()) ? "ok" : "failed") <<std::endl;
+        image.flip_vertically();
+    }
+}
+
+Vec3f Model::normal(Vec2f uvf) {
+    Vec2i uv(uvf[0] * normalmap_.get_width(), uvf[1] * normalmap_.get_height());
+    TGAColor c = normalmap_.get(uv[0], uv[1]);
+    Vec3f res;
+    for (int i=0; i<3; i++) {
+        res[2-i] = (float)c[i]/255.f*2.f - 1.f;
+    }
+
+    return res;
+}
+
+Vec2f Model::uv(int iface, int nthvert) {
+    return uv_[faces_[iface][nthvert]];
+}
+
+float Model::specular(Vec2f uvf) {
+    Vec2i uv(uvf[0] * specularmap_.get_width(), uvf[1] * specularmap_.get_height());
+    return specularmap_.get(uv[0], uv[1])[0] /1.f;
+}
+
+Vec3f Model::normal(int iface, int nthvert) {
+    int idx = texIndices_[iface][nthvert];
+    return norms_[idx].normalize();
+}
+
+
 
