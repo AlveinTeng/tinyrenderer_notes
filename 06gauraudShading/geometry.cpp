@@ -161,3 +161,19 @@ Matrix Matrix::translation(Vec3f v) {
 
     return translation;
 }
+Vec4f Matrix::operator*(const Vec4f &vec) const {
+    Vec4f result(0.f, 0.f, 0.f, 0.f);
+    // If mat is 4x4
+    for (int i = 0; i < 4; i++) {
+        float sum = 0.f;
+        for (int j = 0; j < 4; j++) {
+            sum += m[i][j] * vec[j];
+        }
+        result[i] = sum;
+    }
+    return result;
+}
+
+
+
+

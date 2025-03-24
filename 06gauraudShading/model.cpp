@@ -17,7 +17,7 @@ Model::Model(const char *filename) : verts_(), faces_() {
         if (!line.compare(0, 2, "v ")) {
             iss >> trash;
             Vec3f v;
-            for (int i=0;i<3;i++) iss >> v.raw[i];
+            for (int i=0;i<3;i++) iss >> v[i];
             verts_.push_back(v);
         } else if (!line.compare(0, 2, "f ")) {
             std::vector<int> f;
@@ -39,10 +39,10 @@ Model::Model(const char *filename) : verts_(), faces_() {
             Vec2f texture;
             char trash;
             iss >> trash >> trash;
-            for (int i=0; i < 2; i++) iss >> texture.raw[i];
+            for (int i=0; i < 2; i++) iss >> texture[i];
             // std::cout << texture << std::endl;
 
-            if (texture.raw[1] == 0.) throw std::runtime_error("wrong read texture");
+            if (texture[1] == 0.) throw std::runtime_error("wrong read texture");
             tex_coords_.push_back(texture);
         }
     }
