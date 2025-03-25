@@ -22,19 +22,22 @@ Model::Model(const char *filename) : verts_(), faces_() {
         } else if (!line.compare(0, 2, "f ")) {
             std::vector<int> f;
             std::vector<int> t;
-            int itrash, idx, vtIdx;
-            iss >> trash;
-            while (iss >> idx >> trash >> vtIdx >> trash >> itrash) {
-                idx--; // in wavefront obj all indices start at 1, not zero
-                vtIdx --;
+            std::vector<int> n;
+            int idx, vtIdx, vnIdx;
+            iss >> trash; // 'f'
+            while (iss >> idx >> trash >> vtIdx >> trash >> vnIdx) {
+                // Wavefront OBJ indices are 1-based
+                idx   -= 1;
+                vtIdx -= 1;
+                vnIdx -= 1;
                 f.push_back(idx);
                 t.push_back(vtIdx);
-            }
-            for (const auto& vt : t) {
-                std::cout << vt << std::endl;
+                n.push_back(vnIdx);
             }
             faces_.push_back(f);
             texIndices_.push_back(t);
+            normIndices_.push_back(n);
+
         } else if(!line.compare(0, 3, "vt ")) {
             Vec2f texture;
             char trash;
@@ -44,6 +47,12 @@ Model::Model(const char *filename) : verts_(), faces_() {
 
             if (texture[1] == 0.) throw std::runtime_error("wrong read texture");
             tex_coords_.push_back(texture);
+        } else if (!line.compare(0, 3, "vn ")) {
+            // parse vertex normal
+            iss >> trash >> trash; // read 'v' 'n'
+            Vec3f n;
+            for (int i = 0; i < 3; i++) iss >> n[i];
+            norms_.push_back(n);
         }
     }
     std::cerr << "# v# " << verts_.size() << " f# "  << faces_.size() << " vt#" << tex_coords_.size() << std::endl;
@@ -110,8 +119,9 @@ float Model::specular(Vec2f uvf) {
 }
 
 Vec3f Model::normal(int iface, int nthvert) {
-    int idx = texIndices_[iface][nthvert];
-    return norms_[idx].normalize();
+    int normal_index = normIndices_[iface][nthvert];
+    // Make sure normal_index is in range
+    return norms_[normal_index].normalize();
 }
 
 

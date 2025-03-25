@@ -28,6 +28,10 @@ public:
 	Vec3f vert(int i);
 	std::vector<int> face(int idx);
 	std::vector<int> texIndices(int idx);
+
+	// std::vector<Vec3f> norms_;
+	std::vector<std::vector<int>> normIndices_;
+
 	Vec2f texture(int idx);
 	// Vec2f normal(Vec2f vert);
 	Vec3f normal(int iface, int nthvert);

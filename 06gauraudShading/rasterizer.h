@@ -4,7 +4,11 @@
 #include "tgaimage.h"
 #include "geometry.h"
 #include "model.h"
-
+struct IShader {
+    virtual ~IShader() {}
+    virtual Vec4f vertex(int iface, int nthvert) = 0;
+    virtual bool fragment(Vec3f bar, TGAColor &color) = 0;
+};
 class Rasterizer {
 public:
     struct VertexData {
@@ -27,6 +31,9 @@ public:
     // void renderModelPerspective(Model *model, TGAImage &image, const TGAImage &texture);
     void triangleWithTexPerspectiveCorrect(const Rasterizer::VertexData v[3], float *zbuffer, TGAImage &image, const TGAImage &texture);
 
+    void triangle(Vec4f* pts, IShader& shader, TGAImage &image, TGAImage& zbuffer);
+    
+
 private:
     int width, height, depth;
     Model* model;
@@ -44,10 +51,6 @@ private:
     
 };
 
-struct IShader {
-    virtual ~IShader() {}
-    virtual Vec4f vertex(int iface, int nthvert) = 0;
-    virtual bool fragment(Vec3f bar, TGAColor &color) = 0;
-};
+
 
 #endif // RASTERIZER_H

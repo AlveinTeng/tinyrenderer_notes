@@ -142,6 +142,44 @@ struct vec<3,T> {
 };
 
 // ----------------------------------------------------------------------------
+// 4D partial specialization: named fields x,y,z,w plus basic arithmetic
+// ----------------------------------------------------------------------------
+template <typename T>
+struct vec<4, T> {
+    union {
+        struct { T x, y, z, w; };
+        T data_[4];
+    };
+
+    vec() : x(T()), y(T()), z(T()), w(T()) {}
+
+    vec(T X, T Y, T Z, T W) : x(X), y(Y), z(Z), w(W) {}
+
+    T& operator[](size_t i) {
+        assert(i < 4);
+        return data_[i];
+    }
+
+    const T& operator[](size_t i) const {
+        assert(i < 4);
+        return data_[i];
+    }
+
+    vec<4, T> operator+(const vec<4, T>& v) const {
+        return vec<4, T>(x + v.x, y + v.y, z + v.z, w + v.w);
+    }
+
+    vec<4, T> operator-(const vec<4, T>& v) const {
+        return vec<4, T>(x - v.x, y - v.y, z - v.z, w - v.w);
+    }
+
+    vec<4, T> operator*(float f) const {
+        return vec<4, T>(x * f, y * f, z * f, w * f);
+    }
+};
+
+
+// ----------------------------------------------------------------------------
 // Example operator*(vec<DIM,T>, vec<DIM,T>) for the general case (dot product).
 // For 2D or 3D, you may prefer the specialized versions above, but you can keep
 // this around if you want a quick dot-product for higher DIM vectors.
@@ -167,6 +205,34 @@ vec<LEN, T> embed(const vec<DIM, T> &v, T fill = 1) {
     }
     return ret;
 }
+
+// template<size_t LEN, size_t DIM, typename T> vec<LEN, T> proj(const vec<DIM,T> &v) {
+// 	vec<LEN, T> ret;
+// 	for (size_t i = LEN; i--; ret[i] = v[i]);
+// 	return ret;
+// }
+
+template <size_t LEN, size_t DIM, typename T>
+vec<LEN, T> proj(const vec<DIM, T> &v) {
+    static_assert(LEN <= DIM,
+        "Cannot project to a bigger dimension than the source");
+    vec<LEN, T> result;
+    for (size_t i = 0; i < LEN; i++) {
+        result[i] = v[i]; // copy the first LEN components
+    }
+    return result;
+}
+
+template <size_t LEN, typename T, size_t DIM>
+vec<LEN, T> proj(const vec<DIM, T> &v) {
+    static_assert(LEN <= DIM, "Cannot project to a bigger dimension than the source");
+    vec<LEN, T> result;
+    for (size_t i = 0; i < LEN; i++) {
+        result[i] = v[i];
+    }
+    return result;
+}
+
 
 // ----------------------------------------------------------------------------
 // Typedefs for convenience:

@@ -2,6 +2,7 @@
 #include "model.h"
 // #include <cassert>
 
+
 Rasterizer::Rasterizer(int width, int height, Vec3f camera, Vec3f center, int depth, Model* model) {
     this->width = width; 
     this->height = height; 
@@ -75,7 +76,33 @@ Vec3f Rasterizer::barycentric2D(const Vec2f &A, const Vec2f &B, const Vec2f &C, 
     float gamma = 1.f - alpha - beta;
     return Vec3f(alpha, beta, gamma);
 }
-
+void Rasterizer::triangle(Vec4f *pts, IShader &shader, TGAImage &image, TGAImage &zbuffer) {
+    Vec2f bboxmin( std::numeric_limits<float>::max(),  std::numeric_limits<float>::max());
+    Vec2f bboxmax(-std::numeric_limits<float>::max(), -std::numeric_limits<float>::max());
+    for (int i=0; i<3; i++) {
+        for (int j=0; j<2; j++) {
+            bboxmin[j] = std::min(bboxmin[j], pts[i][j]/pts[i][3]);
+            bboxmax[j] = std::max(bboxmax[j], pts[i][j]/pts[i][3]);
+        }
+    }
+    Vec2i P;
+    TGAColor color;
+    for (P.x=bboxmin.x; P.x<=bboxmax.x; P.x++) {
+        for (P.y=bboxmin.y; P.y<=bboxmax.y; P.y++) {
+            Vec2f Pf(P[0], P[1]);
+            Vec3f c = barycentric2D(proj<2, 4>(pts[0]*(1.f / pts[0][3])), proj<2, 4>(pts[1]*( 1.f /pts[1][3])), proj<2, 4>(pts[2] *(1.f/pts[2][3])), Pf);
+            float z = pts[0][2]*c.x + pts[1][2]*c.y + pts[2][2]*c.z;
+            float w = pts[0][3]*c.x + pts[1][3]*c.y + pts[2][3]*c.z;
+            int frag_depth = std::max(0, std::min(255, int(z/w+.5)));
+            if (c.x<0 || c.y<0 || c.z<0 || zbuffer.get(P.x, P.y)[0]>frag_depth) continue;
+            bool discard = shader.fragment(c, color);
+            if (!discard) {
+                zbuffer.set(P.x, P.y, TGAColor(frag_depth));
+                image.set(P.x, P.y, color);
+            }
+        }
+    }
+}
 void Rasterizer::triangleWithTexPerspectiveCorrect(const Rasterizer::VertexData v[3], float *zbuffer, TGAImage &image, const TGAImage &texture) {
     Vec2f bboxmin(1e8, 1e8), bboxmax(-1e8, -1e8);
     Vec2f clamp(image.get_width() - 1, image.get_height() - 1);
