@@ -27,7 +27,7 @@ Matrix Rasterizer::viewport(int x, int y, int w, int h, int depth) {
 }
 
 void Rasterizer::lookat(Vec3f eye, Vec3f center, Vec3f up, Matrix& ModelView) {
-    Vec3f z = (eye-center).normalize();
+    Vec3f z = (eye - center).normalize();
     Vec3f x =up.cross(z).normalize();
     Vec3f y = z.cross(x).normalize();
     Matrix Minv = Matrix::identity(4);
@@ -187,4 +187,10 @@ void Rasterizer::renderModelPerspective(Model *model, TGAImage &image, const TGA
     // image.flip_vertically();
     image.write_tga_file("../output.tga");
     delete[] zbuffer;
-}
+};
+
+Matrix Rasterizer::projection(float coeff) {
+    Matrix m = Matrix::identity(4);
+    m[3][2] = coeff;
+    return m;
+};

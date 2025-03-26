@@ -32,6 +32,8 @@ public:
     void triangleWithTexPerspectiveCorrect(const Rasterizer::VertexData v[3], float *zbuffer, TGAImage &image, const TGAImage &texture);
 
     void triangle(Vec4f* pts, IShader& shader, TGAImage &image, TGAImage& zbuffer);
+
+    Matrix projection(float coeff);
     
 
 private:

@@ -174,6 +174,23 @@ Vec4f Matrix::operator*(const Vec4f &vec) const {
     return result;
 }
 
+void Matrix::set_col(int col, const Vec4f& v) {
+    if (col >= cols) throw std::out_of_range("Column index out of bounds");
+    for (int row = 0; row < 4; ++row) {
+        m[row][col] = v[row];
+    }
+}
 
+// 逆转置矩阵（法线变换的核心）
+Matrix Matrix::inverse_transpose() const {
+    Matrix inv = this->inverse();
+    return inv.transpose();
+};
+
+// Matrix Rasterizer::projection(float coeff) {
+//     Matrix m = Matrix::identity(4);
+//     m[3][2] = coeff;
+//     return m;
+// };
 
 

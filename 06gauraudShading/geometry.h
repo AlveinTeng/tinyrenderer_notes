@@ -299,6 +299,9 @@ public:
     Matrix zoom(float factor);
     Matrix translation(Vec3f v);
     Vec4f operator*(const Vec4f &vec) const;
+
+	void set_col(int col, const Vec4f& v);
+	Matrix inverse_transpose() const;
 };
 
 #endif // __GEOMETRY_H__
